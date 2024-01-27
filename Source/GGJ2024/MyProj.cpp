@@ -19,23 +19,18 @@ AMyProj::AMyProj()
 
 	MeshComponent->SetStaticMesh(TestShape.Object);
 	// MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	MeshComponent->SetSimulatePhysics(true);
-	
-	const FRotator Rotation = GetActorRotation();
-    const FRotator YawRotation(0, Rotation.Yaw, 0);
-    
-    // get forward vector
-    const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-    MeshComponent->AddForce(ForwardDirection * 10);
-
-    MeshComponent->SetConstraintMode(EDOFMode::YZPlane);	
+	MeshComponent->SetSimulatePhysics(false);
 }
 
 // Called when the game starts or when spawned
 void AMyProj::BeginPlay()
 {
 	Super::BeginPlay();
+
+    MeshComponent->SetConstraintMode(EDOFMode::YZPlane);
+	
+    // MeshComponent->SetCollisionObjectType(ECC_GameTraceChannel1);
+    MeshComponent->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 }
 
 // Called every frame
@@ -43,5 +38,6 @@ void AMyProj::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y + ForwardDirection * Speed, GetActorLocation().Z + VerticalDirection * Speed));
 }
 

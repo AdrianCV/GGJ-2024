@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "InputActionValue.h"
-#include "MyProj.h"
+#include "Engine/TriggerBox.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 
@@ -33,25 +33,62 @@ class AGGJ2024Character : public ACharacter
 	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* DefaultMappingContext;
+	const UInputMappingContext* DefaultMappingContext;
 
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* JumpAction;
+	const UInputAction* JumpAction;
 
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* MoveAction;
+	const UInputAction* MoveAction;
 
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* LookAction;
+	const UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, Category = Input)
-	UInputAction* ShootAction;
+	const UInputAction* ShootAction;
+
+	UPROPERTY(EditAnywhere, Category = Input)
+	const UInputAction* SleepAction;
+
+	float ForwardDirection = 1;
+
+	UPROPERTY(EditAnywhere)
+	float DamageTaken;
+	
+
+	UPROPERTY(EditAnywhere)
+	float ShotLifespan = 2;
+
+	UPROPERTY(EditAnywhere)
+	float ShotSpeed = 2;
+
+	UPROPERTY(EditAnywhere)
+	float ShootCooldown = 2;
+	float CooldownTimer;
+
+	bool bHasShot = false;
+	bool bCanShoot = true;
+
+	UPROPERTY(EditAnywhere)
+	AActor* Trigger1;
+	
+	UPROPERTY(EditAnywhere)
+	AActor* Trigger2;
+	
+	UPROPERTY(EditAnywhere)
+	AActor* Trigger3;
+
+	UPROPERTY()
+	AGGJ2024Character* OtherPlayer;
+
+	float VerticalInputValue;
 
 public:
 	AGGJ2024Character();
+
 	
 protected:
 
@@ -60,11 +97,9 @@ protected:
 
 	void Move2D(const FInputActionValue& Value);
 	
-	/** Called for looking input */
-	void Look(const FInputActionValue& Value);
-
 	void Shoot();
-			
+
+	void Sleep();
 
 protected:
 	// APawn interface
@@ -73,7 +108,23 @@ protected:
 	// To add mapping context
 	virtual void BeginPlay();
 
+	virtual void Tick(float DeltaSeconds) override;
+
+	UFUNCTION()
+	void BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, 
+								   UPrimitiveComponent* OtherComp, 
+								   int32 OtherBodyIndex, 
+								   bool bFromSweep, 
+								   const FHitResult &SweepResult );
+
+	UFUNCTION()
+	void EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+
 public:
+
+	void TakeDamage(int DamageToTake);
+	
 	// /** Returns CameraBoom subobject **/
 	// FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	// /** Returns FollowCamera subobject **/

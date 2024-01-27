@@ -7,17 +7,24 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Hitbox.h"
 #include "InputActionValue.h"
+#include "MyProj.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
 // AGGJ2024Character
 
+
+
 AGGJ2024Character::AGGJ2024Character()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AGGJ2024Character::BeginOverlap);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &AGGJ2024Character::EndOverlap);
+
 		
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -37,6 +44,8 @@ AGGJ2024Character::AGGJ2024Character()
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 
+	GetMesh()->SetConstraintMode(EDOFMode::YZPlane);
+
 
 	// // Create a camera boom (pulls in towards the player if there is a collision)
 	// CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -49,6 +58,7 @@ AGGJ2024Character::AGGJ2024Character()
 	// FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	// FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -59,13 +69,65 @@ void AGGJ2024Character::BeginPlay()
 	Super::BeginPlay();
 
 	//Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	// Set Collision
+	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
+    GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+	
+	GetMesh()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+}
+
+void AGGJ2024Character::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (bHasShot)
+	{
+		bCanShoot = false;
+		CooldownTimer += DeltaTime;
+	}
+
+	if (CooldownTimer >= ShootCooldown)
+	{
+		bHasShot = false;
+		bCanShoot = true;
+		CooldownTimer = 0;
+	}
+}
+
+void AGGJ2024Character::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (const AMyProj* Proj = Cast<AMyProj>(OtherActor); IsValid(Proj))
+	{
+		DamageTaken += Proj->Damage; 
+	}
+	else if (AGGJ2024Character* OverlappedPlayer = Cast<AGGJ2024Character>(OtherActor); IsValid(OverlappedPlayer))
+	{
+		OtherPlayer = OverlappedPlayer;
+	}
+}
+
+void AGGJ2024Character::EndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (const AGGJ2024Character* OverlappedPlayer = Cast<AGGJ2024Character>(OtherActor); IsValid(OverlappedPlayer))
+ 	{
+ 		OtherPlayer = nullptr;
+ 	}
+}
+
+void AGGJ2024Character::TakeDamage(int DamageToTake)
+{
+	DamageTaken += DamageToTake;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -84,10 +146,13 @@ void AGGJ2024Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Move2D);
 
 		// Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Look);
+		// EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Look);
 
 		// Shooting
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Shoot);
+
+		// Sleep
+		EnhancedInputComponent->BindAction(SleepAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Sleep);
 	}
 	else
 	{
@@ -98,7 +163,7 @@ void AGGJ2024Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 void AGGJ2024Character::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
-	FVector2D MovementVector = Value.Get<FVector2D>();
+	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
@@ -107,13 +172,13 @@ void AGGJ2024Character::Move(const FInputActionValue& Value)
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		// get forward vector
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		// ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		// add movement 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
+		// AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
 }
@@ -122,32 +187,50 @@ void AGGJ2024Character::Move2D(const FInputActionValue& Value)
 {
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 	
-	const FRotator Rotation = Controller->GetControlRotation();
-	const FRotator YawRotation(0, Rotation.Yaw, 0);
+	ForwardDirection = MovementVector.X > 0 ? 1 : -1;
+	VerticalInputValue = MovementVector.Y;
 	
-	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	// const FRotator Rotation = Controller->GetControlRotation();
+	// const FRotator YawRotation(0, Rotation.Yaw, 0);
 	
-	AddMovementInput(FVector(0.0, 1.0, 0.0), MovementVector.X);
+	// const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	
+	AddMovementInput(FVector(0.0, 1.0, 0.0), MovementVector.X * 0.1);
+	// UE_LOG(LogTemp, Warning, TEXT("%f"), MovementVector.Y)
 	
 	SetActorRotation(MovementVector.X > 0 ? FRotator(0.0, 90.0, 0.0) : FRotator(0.0, -90.0, 0.0));
-	
-	// UE_LOG(LogTemp, Warning, TEXT("%f"), MovementVector.X);
-}
-
-void AGGJ2024Character::Look(const FInputActionValue& Value)
-{
-	// input is a Vector2D
-	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
-	{
-		// add yaw and pitch input to controller
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
-	}
 }
 
 void AGGJ2024Character::Shoot()
 {
-	GetWorld()->SpawnActor<AMyProj>(AMyProj::StaticClass(), GetActorLocation(), GetActorRotation());
+	if (!bCanShoot)
+	{
+		return;	
+	}
+	
+	const FVector SpawnLocation = FVector(GetActorLocation().X, GetActorLocation().Y + ForwardDirection * 100, GetActorLocation().Z);
+	
+	AMyProj* SpawnedProjectile = GetWorld()->SpawnActor<AMyProj>(AMyProj::StaticClass(), SpawnLocation, GetActorRotation());
+
+	SpawnedProjectile->ForwardDirection = ForwardDirection;
+	SpawnedProjectile->Speed = ShotSpeed;
+
+	bHasShot = true;
+
+	SpawnedProjectile->SetLifeSpan(ShotLifespan);
+}
+
+void AGGJ2024Character::Sleep()
+{
+	if (VerticalInputValue < 0)
+	{
+		FVector SpawnLocation = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z -10);	
+		AHitbox* Hitbox = GetWorld()->SpawnActor<AHitbox>(AHitbox::StaticClass(), SpawnLocation, GetActorRotation());
+
+		Hitbox->PlayerThatAttacked = this;
+		Hitbox->Damage = 30;
+		Hitbox->Knockback = 100000;
+
+		Hitbox->SetLifeSpan(0.3);
+	}
 }

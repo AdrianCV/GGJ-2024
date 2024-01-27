@@ -13,6 +13,9 @@ class AGGJ2024GameMode : public AGameModeBase
 
 public:
 	AGGJ2024GameMode();
+
+	UFUNCTION()
+	void BeginPlay() override;
 };
 
 

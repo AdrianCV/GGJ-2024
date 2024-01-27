@@ -2,6 +2,7 @@
 
 #include "GGJ2024GameMode.h"
 #include "GGJ2024Character.h"
+#include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
 
 AGGJ2024GameMode::AGGJ2024GameMode()
@@ -12,4 +13,15 @@ AGGJ2024GameMode::AGGJ2024GameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+}
+
+void AGGJ2024GameMode::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	APlayerController* NewPlayer = UGameplayStatics::CreatePlayer(this, -1);
+	
+	NewPlayer->AutoReceiveInput = EAutoReceiveInput::Player1;
+	
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *NewPlayer->GetName());
 }
