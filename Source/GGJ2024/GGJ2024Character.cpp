@@ -2,10 +2,8 @@
 
 #include "GGJ2024Character.h"
 #include "Engine/LocalPlayer.h"
-#include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -39,16 +37,17 @@ AGGJ2024Character::AGGJ2024Character()
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 
-	// Create a camera boom (pulls in towards the player if there is a collision)
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
-	// Create a follow camera
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
-	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	// // Create a camera boom (pulls in towards the player if there is a collision)
+	// CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	// CameraBoom->SetupAttachment(RootComponent);
+	// CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	// CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+	//
+	// // Create a follow camera
+	// FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	// FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
+	// FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -82,10 +81,13 @@ void AGGJ2024Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Move);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Move2D);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Look);
+
+		// Shooting
+		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Shoot);
 	}
 	else
 	{
@@ -116,6 +118,22 @@ void AGGJ2024Character::Move(const FInputActionValue& Value)
 	}
 }
 
+void AGGJ2024Character::Move2D(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	
+	const FRotator Rotation = Controller->GetControlRotation();
+	const FRotator YawRotation(0, Rotation.Yaw, 0);
+	
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	
+	AddMovementInput(FVector(0.0, 1.0, 0.0), MovementVector.X);
+	
+	SetActorRotation(MovementVector.X > 0 ? FRotator(0.0, 90.0, 0.0) : FRotator(0.0, -90.0, 0.0));
+	
+	// UE_LOG(LogTemp, Warning, TEXT("%f"), MovementVector.X);
+}
+
 void AGGJ2024Character::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
@@ -127,4 +145,9 @@ void AGGJ2024Character::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AGGJ2024Character::Shoot()
+{
+	GetWorld()->SpawnActor<AMyProj>(AMyProj::StaticClass(), GetActorLocation(), GetActorRotation());
 }

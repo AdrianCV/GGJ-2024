@@ -3,8 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputActionValue.h"
+#include "MyProj.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+
 #include "GGJ2024Character.generated.h"
 
 class USpringArmComponent;
@@ -21,12 +24,12 @@ class AGGJ2024Character : public ACharacter
 	GENERATED_BODY()
 
 	/** Camera boom positioning the camera behind the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraBoom;
-
-	/** Follow camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FollowCamera;
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	// USpringArmComponent* CameraBoom;
+	//
+	// /** Follow camera */
+	// UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	// UCameraComponent* FollowCamera;
 	
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -44,17 +47,23 @@ class AGGJ2024Character : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, Category = Input)
+	UInputAction* ShootAction;
+
 public:
 	AGGJ2024Character();
 	
-
 protected:
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
+	void Move2D(const FInputActionValue& Value);
+	
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void Shoot();
 			
 
 protected:
@@ -65,9 +74,9 @@ protected:
 	virtual void BeginPlay();
 
 public:
-	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	// /** Returns CameraBoom subobject **/
+	// FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	// /** Returns FollowCamera subobject **/
+	// FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
 
