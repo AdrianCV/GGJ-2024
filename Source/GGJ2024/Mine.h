@@ -3,34 +3,24 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GGJ2024Character.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/Actor.h"
-#include "Hitbox.generated.h"
+#include "Mine.generated.h"
 
 UCLASS()
-class GGJ2024_API AHitbox : public AActor
+class GGJ2024_API AMine : public AActor
 {
 	GENERATED_BODY()
-
-public:
-	// Sets default values for this actor's properties
-	AHitbox();
-
-	int Damage;
-	int Knockback;
-	float KnockbackScaling;
-	float VerticalRatio;
-	float HorizontalRatio;
-
-	UPROPERTY(EditAnywhere)
-    UBoxComponent* BoxComponent;
-
-	UPROPERTY(EditAnywhere)
-	AGGJ2024Character* PlayerThatAttacked;
 	
+public:	
+	// Sets default values for this actor's properties
+	AMine();
+
 	UPROPERTY(EditAnywhere)
-	TArray<AGGJ2024Character*> Players;
+	UBoxComponent* BoxComponent;
+
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* Mesh;
 
 protected:
 	// Called when the game starts or when spawned
@@ -42,7 +32,4 @@ public:
 
 	UFUNCTION()
 	void BeginOverlap(UPrimitiveComponent* PrimitiveComponent, AActor* Actor, UPrimitiveComponent* PrimitiveComponent1, int I, bool bArg, const FHitResult& HitResult);
-
-
-	void DealDamage();
 };

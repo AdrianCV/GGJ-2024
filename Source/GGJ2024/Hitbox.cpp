@@ -3,8 +3,6 @@
 
 #include "Hitbox.h"
 
-#include "Components/CapsuleComponent.h"
-#include "GameFramework/PawnMovementComponent.h"
 
 // Sets default values
 AHitbox::AHitbox()
@@ -26,8 +24,11 @@ void AHitbox::BeginPlay()
 	
 	BoxComponent->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
 
+	// DrawDebugBox(GetWorld(), BoxComponent->GetComponentLocation(), BoxComponent->GetUnscaledBoxExtent(), FColor::Red, true);
+	BoxComponent->SetHiddenInGame(false);
+
 	FTimerHandle Timer;
-	GetWorldTimerManager().SetTimer(Timer, this, &AHitbox::DealDamage, 0.15, false);
+	GetWorldTimerManager().SetTimer(Timer, this, &AHitbox::DealDamage, 0.1, false);
 }
 
 // Called every frame

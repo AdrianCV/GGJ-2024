@@ -16,7 +16,6 @@ AMyProj::AMyProj()
 	
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> TestShape(TEXT("'/Engine/BasicShapes/Cube.Cube'"));
 
-
 	MeshComponent->SetStaticMesh(TestShape.Object);
 	// MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	MeshComponent->SetSimulatePhysics(false);

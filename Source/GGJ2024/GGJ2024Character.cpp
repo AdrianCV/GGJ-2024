@@ -127,6 +127,16 @@ void AGGJ2024Character::ResetSleepCooldown()
 	bCanSleep = true;
 }
 
+void AGGJ2024Character::ResetJabCooldown()
+{
+	bCanJab = true;
+}
+
+void AGGJ2024Character::ResetJabIndex()
+{
+	JabIndex = 0;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -150,6 +160,9 @@ void AGGJ2024Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 		// Sleep
 		EnhancedInputComponent->BindAction(SleepAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Sleep);
+
+		// Jab
+		EnhancedInputComponent->BindAction(JabAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Jab);
 	}
 	else
 	{
@@ -225,21 +238,21 @@ void AGGJ2024Character::Shoot()
 
 void AGGJ2024Character::Sleep()
 {
-	if (!bCanSleep)
+	if (VerticalInputValue < -10)
 	{
-		return;
-	}
-	
-	if (VerticalInputValue < 0)
-	{
+		if (!bCanSleep)
+     	{
+     		return;
+     	}
+		
 		FVector SpawnLocation = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z -10);	
 		AHitbox* Hitbox = GetWorld()->SpawnActor<AHitbox>(AHitbox::StaticClass(), SpawnLocation, GetActorRotation());
 
 		Hitbox->PlayerThatAttacked = this;
 		Hitbox->Damage = 30;
 		Hitbox->Knockback = 500;
-		Hitbox->KnockbackScaling = 2;
-		Hitbox->HorizontalRatio = 1;
+		Hitbox->KnockbackScaling = 5;
+		Hitbox->HorizontalRatio = 3;
 		Hitbox->VerticalRatio = 0.55;
 
 		Hitbox->SetLifeSpan(0.3);
@@ -250,4 +263,66 @@ void AGGJ2024Character::Sleep()
 
 		GetWorld()->GetTimerManager().SetTimer(Timer, this, &AGGJ2024Character::ResetSleepCooldown, SleepCooldown, false);
 	}
+}
+
+void AGGJ2024Character::Jab()
+{
+	if (!bCanJab)
+	{
+		return;
+	}
+
+	FVector SpawnLocation = FVector(GetActorLocation().X, GetActorLocation().Y + (60 * ForwardDirection) , GetActorLocation().Z);
+
+	AHitbox* Hitbox = GetWorld()->SpawnActor<AHitbox>(AHitbox::StaticClass(), SpawnLocation, GetActorRotation());
+
+	Hitbox->PlayerThatAttacked = this;
+	Hitbox->HorizontalRatio = 1;
+    Hitbox->VerticalRatio = 0.3;
+
+	Hitbox->SetLifeSpan(0.3);
+	
+	FTimerHandle CooldownTimer;
+	GetWorld()->GetTimerManager().SetTimer(CooldownTimer, this, &AGGJ2024Character::ResetJabCooldown, JabCooldown, false);
+	
+	switch (JabIndex)
+	{
+	case 0:
+		Hitbox->Damage = 1;
+		Hitbox->Knockback = 200;
+		Hitbox->KnockbackScaling = 1;
+		
+		Hitbox->SetActorScale3D(FVector(1.5, 1, 2));
+		
+		JabIndex++;
+		
+		break;
+	case 1:
+		Hitbox->Damage = 3;
+		Hitbox->Knockback = 300;
+		Hitbox->KnockbackScaling = 1;
+
+		Hitbox->SetActorScale3D(FVector(2, 1, 2));
+		
+		JabIndex++;
+		
+		break;
+	case 2:
+		Hitbox->Damage = 5;
+		Hitbox->Knockback = 750;
+		Hitbox->KnockbackScaling = 2;
+
+		Hitbox->SetActorScale3D(FVector(2.5, 1, 2));
+		
+		JabIndex = 0;
+		
+		GetWorld()->GetTimerManager().SetTimer(CooldownTimer, this, &AGGJ2024Character::ResetJabCooldown, 0.7, false);
+		break;
+	default:
+		break;
+	}
+
+	bCanJab = false;
+
+	GetWorld()->GetTimerManager().SetTimer(ResetJabIndexTimerHandle, this, &AGGJ2024Character::ResetJabIndex, ResetJabIndexTimer, false);
 }
