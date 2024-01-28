@@ -4,6 +4,7 @@
 #include "Hitbox.h"
 
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 // Sets default values
 AHitbox::AHitbox()
@@ -52,14 +53,11 @@ void AHitbox::DealDamage()
 		{
 			Player->TakeDamage(Damage);
 
-			const FVector KnockbackDir = FVector(0, PlayerThatAttacked->GetActorLocation().Y - Player->GetActorLocation().Y ? 1 : -1, 0.5) * Knockback;
+			const FVector KnockbackDir =
+				FVector(0, PlayerThatAttacked->GetActorLocation().Y - Player->GetActorLocation().Y > 0 ? -HorizontalRatio : HorizontalRatio, VerticalRatio)
+				* ((((((Player->DamageTaken / 10) + ((Player->DamageTaken * Damage)/20)) * 1.4) + 18) * 1.1) + Knockback);
 
-			Player->GetMesh()->SetSimulatePhysics(true);
-			// Player->GetMesh()->SetPhysicsLinearVelocity(KnockbackDir);
-			Player->GetMesh()->AddImpulse(KnockbackDir);
-			// UE_LOG(LogTemp, Warning, TEXT("%s"), *PlayerThatAttacked->GetActorLocation().ToString());
-			// UE_LOG(LogTemp, Warning, TEXT("%s"), *Player->GetActorLocation().ToString());
-			UE_LOG(LogTemp, Warning, TEXT("%s"), *Player->GetMesh()->GetPhysicsLinearVelocity().ToString());
+			Player->LaunchCharacter(KnockbackDir,false, true);
 		}	
 	}
 }

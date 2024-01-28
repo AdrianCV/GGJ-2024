@@ -21,11 +21,12 @@ public:
 	// Sets default values for this actor's properties
 	AHitbox();
 
-	UPROPERTY(EditAnywhere)
 	int Damage;
-	
-	UPROPERTY(EditAnywhere)
 	int Knockback;
+	float KnockbackScaling;
+	float VerticalRatio;
+	float HorizontalRatio;
+
 
 	UPROPERTY(EditAnywhere)
 	AGGJ2024Character* PlayerThatAttacked;

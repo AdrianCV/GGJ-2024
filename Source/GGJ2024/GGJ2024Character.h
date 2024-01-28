@@ -53,11 +53,11 @@ class AGGJ2024Character : public ACharacter
 	UPROPERTY(EditAnywhere, Category = Input)
 	const UInputAction* SleepAction;
 
+public:
 	float ForwardDirection = 1;
 
 	UPROPERTY(EditAnywhere)
 	float DamageTaken;
-	
 
 	UPROPERTY(EditAnywhere)
 	float ShotLifespan = 2;
@@ -66,20 +66,16 @@ class AGGJ2024Character : public ACharacter
 	float ShotSpeed = 2;
 
 	UPROPERTY(EditAnywhere)
-	float ShootCooldown = 2;
-	float CooldownTimer;
+	float SleepCooldown = 5;
 
-	bool bHasShot = false;
+	UPROPERTY(EditAnywhere)
+	float ShootCooldown = 2; 
+
+	UPROPERTY(EditAnywhere)
 	bool bCanShoot = true;
 
 	UPROPERTY(EditAnywhere)
-	AActor* Trigger1;
-	
-	UPROPERTY(EditAnywhere)
-	AActor* Trigger2;
-	
-	UPROPERTY(EditAnywhere)
-	AActor* Trigger3;
+	bool bCanSleep = true;
 
 	UPROPERTY()
 	AGGJ2024Character* OtherPlayer;
@@ -123,7 +119,17 @@ protected:
 
 public:
 
+	UFUNCTION()
 	void TakeDamage(int DamageToTake);
+
+	UFUNCTION()
+	void ResetShootCooldown();
+
+	UFUNCTION()
+	void ResetSleepCooldown();
+
+
+
 	
 	// /** Returns CameraBoom subobject **/
 	// FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

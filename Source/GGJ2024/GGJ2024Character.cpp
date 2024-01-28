@@ -78,29 +78,16 @@ void AGGJ2024Character::BeginPlay()
 	}
 
 	// Set Collision
-	GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
-    GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
-	
-	GetMesh()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	// GetCapsuleComponent()->SetCollisionObjectType(ECC_GameTraceChannel1);
+	// GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+	//
+	// GetMesh()->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Overlap);
+	// GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void AGGJ2024Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (bHasShot)
-	{
-		bCanShoot = false;
-		CooldownTimer += DeltaTime;
-	}
-
-	if (CooldownTimer >= ShootCooldown)
-	{
-		bHasShot = false;
-		bCanShoot = true;
-		CooldownTimer = 0;
-	}
 }
 
 void AGGJ2024Character::BeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -128,6 +115,16 @@ void AGGJ2024Character::EndOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 void AGGJ2024Character::TakeDamage(int DamageToTake)
 {
 	DamageTaken += DamageToTake;
+}
+
+void AGGJ2024Character::ResetShootCooldown()
+{
+	bCanShoot = true;
+}
+
+void AGGJ2024Character::ResetSleepCooldown()
+{
+	bCanSleep = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -215,13 +212,24 @@ void AGGJ2024Character::Shoot()
 	SpawnedProjectile->ForwardDirection = ForwardDirection;
 	SpawnedProjectile->Speed = ShotSpeed;
 
-	bHasShot = true;
+	bCanShoot = false;
 
 	SpawnedProjectile->SetLifeSpan(ShotLifespan);
+
+	FTimerHandle Timer;
+	// FTimerDelegate TimerDelegate;
+
+	// TimerDelegate.BindUFunction(this, FName("ResetCooldown"), bHasShot, bCanShoot);
+	GetWorld()->GetTimerManager().SetTimer(Timer, this, &AGGJ2024Character::ResetShootCooldown, ShootCooldown, false);
 }
 
 void AGGJ2024Character::Sleep()
 {
+	if (!bCanSleep)
+	{
+		return;
+	}
+	
 	if (VerticalInputValue < 0)
 	{
 		FVector SpawnLocation = FVector(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z -10);	
@@ -229,8 +237,17 @@ void AGGJ2024Character::Sleep()
 
 		Hitbox->PlayerThatAttacked = this;
 		Hitbox->Damage = 30;
-		Hitbox->Knockback = 100000;
+		Hitbox->Knockback = 500;
+		Hitbox->KnockbackScaling = 2;
+		Hitbox->HorizontalRatio = 1;
+		Hitbox->VerticalRatio = 0.55;
 
 		Hitbox->SetLifeSpan(0.3);
+
+		bCanSleep = false;	
+
+		FTimerHandle Timer;
+
+		GetWorld()->GetTimerManager().SetTimer(Timer, this, &AGGJ2024Character::ResetSleepCooldown, SleepCooldown, false);
 	}
 }
