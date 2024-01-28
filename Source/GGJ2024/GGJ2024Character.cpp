@@ -9,6 +9,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Hitbox.h"
 #include "InputActionValue.h"
+#include "Mine.h"
 #include "MyProj.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -137,6 +138,11 @@ void AGGJ2024Character::ResetJabIndex()
 	JabIndex = 0;
 }
 
+void AGGJ2024Character::ResetMineCooldown()
+{
+	bCanDropMine = true;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -159,7 +165,7 @@ void AGGJ2024Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(ShootAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Shoot);
 
 		// Sleep
-		EnhancedInputComponent->BindAction(SleepAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Sleep);
+		EnhancedInputComponent->BindAction(SpecialAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Special);
 
 		// Jab
 		EnhancedInputComponent->BindAction(JabAction, ETriggerEvent::Triggered, this, &AGGJ2024Character::Jab);
@@ -236,7 +242,7 @@ void AGGJ2024Character::Shoot()
 	GetWorld()->GetTimerManager().SetTimer(Timer, this, &AGGJ2024Character::ResetShootCooldown, ShootCooldown, false);
 }
 
-void AGGJ2024Character::Sleep()
+void AGGJ2024Character::Special()
 {
 	if (VerticalInputValue < -10)
 	{
@@ -262,6 +268,25 @@ void AGGJ2024Character::Sleep()
 		FTimerHandle Timer;
 
 		GetWorld()->GetTimerManager().SetTimer(Timer, this, &AGGJ2024Character::ResetSleepCooldown, SleepCooldown, false);
+	}
+	else
+	{
+		if (!bCanDropMine)
+		{
+			return;
+		}
+
+		AMine* Mine = GetWorld()->SpawnActor<AMine>(AMine::StaticClass(), GetActorLocation(), GetActorRotation());
+
+		Mine->Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Mine->PlayerThatAttacked = this;
+		Mine->Damage = 4;
+		Mine->Knockback = 450;
+		Mine->KnockbackScaling = 3;
+		Mine->HorizontalRatio = 0.55;
+		Mine->HorizontalRatio = 3;
+
+		bCanDropMine = false;
 	}
 }
 

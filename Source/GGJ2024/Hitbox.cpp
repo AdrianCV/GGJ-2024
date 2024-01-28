@@ -58,7 +58,7 @@ void AHitbox::DealDamage()
 				FVector(0, PlayerThatAttacked->GetActorLocation().Y - Player->GetActorLocation().Y > 0 ? -HorizontalRatio : HorizontalRatio, VerticalRatio)
 				* ((((((Player->DamageTaken / 10) + ((Player->DamageTaken * Damage)/20)) * 1.4) + 18) * 1.1) + Knockback);
 
-			Player->LaunchCharacter(KnockbackDir,false, true);
+			Player->LaunchCharacter(KnockbackDir,true, true);
 		}	
 	}
 }

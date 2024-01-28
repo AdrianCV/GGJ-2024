@@ -51,7 +51,7 @@ class AGGJ2024Character : public ACharacter
 	const UInputAction* ShootAction;
 
 	UPROPERTY(EditAnywhere, Category = Input)
-	const UInputAction* SleepAction;
+	const UInputAction* SpecialAction;
 
 	UPROPERTY(EditAnywhere, Category = Input)
 	const UInputAction* JabAction;
@@ -78,6 +78,9 @@ public:
 	float JabCooldown = 0.2;
 
 	UPROPERTY(EditAnywhere)
+	float MineCooldown = 1;
+
+	UPROPERTY(EditAnywhere)
 	bool bCanShoot = true;
 
 	UPROPERTY(EditAnywhere)
@@ -91,8 +94,11 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	float ResetJabIndexTimer;
-
+	
 	FTimerHandle ResetJabIndexTimerHandle;
+	
+	UPROPERTY(EditAnywhere)
+	bool bCanDropMine = true;
 	
 	UPROPERTY()
 	AGGJ2024Character* OtherPlayer;
@@ -112,7 +118,7 @@ protected:
 	
 	void Shoot();
 
-	void Sleep();
+	void Special();
 
 	void Jab();
 
@@ -152,6 +158,9 @@ public:
 
 	UFUNCTION()
 	void ResetJabIndex();
+
+	UFUNCTION()
+	void ResetMineCooldown();
 
 	
 	// /** Returns CameraBoom subobject **/
